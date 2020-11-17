@@ -37,8 +37,8 @@ def _prepare_batch(batch, device, non_blocking):
             convert_tensor(y, device=device, non_blocking=non_blocking))
 
 
-def run(train_loader, val_loader, pretrained_weights, num_classes, current_dataset, epochs, lr, momentum, weight_decay, lr_step, k1, k2, es_patience, log_dir):
-    model = create_VggVAE(pretrained_weights=pretrained_weights, num_classes=num_classes)
+def run(train_loader, val_loader, pretrained_weights, pre_num_classes, cur_num_classes, current_dataset, epochs, lr, momentum, weight_decay, lr_step, k1, k2, es_patience, log_dir):
+    model = create_VggVAE(pretrained_weights=pretrained_weights, pre_num_classes=pre_num_classes, cur_num_classes=cur_num_classes)
 
     device = 'cpu'
     if torch.cuda.is_available():
@@ -217,7 +217,9 @@ if __name__ == "__main__":
                         help="specify the path of the dataset")
     parser.add_argument('--pretrained_weights', type=str, default='None',
                         help='if not specified, loaded imagenet params. if specified, loaded params of given path (classifier not included!!)')
-    parser.add_argument('--num_classes', type=int, default=45,
+    parser.add_argument('--pre_num_classes', type=int, default=45,
+                        help='the number of classes of previous dataset')
+    parser.add_argument('--cur_num_classes', type=int, default=45,
                         help='the number of classes of current dataset')
     parser.add_argument('--current_dataset', type=str, default='UCM',
                         help='should be one of [UCM, AID, NWPU, PROJECT]')
@@ -243,5 +245,5 @@ if __name__ == "__main__":
 
     dataloaders, dataset_sizes = ImageNetData(args)
 
-    run(dataloaders['train'], dataloaders['val'], args.pretrained_weights, args.num_classes, args.current_dataset, args.epochs, args.lr, args.momentum, args.weight_decay, args.lr_step,
+    run(dataloaders['train'], dataloaders['val'], args.pretrained_weights, args.pre_num_classes, args.cur_num_classes, args.current_dataset, args.epochs, args.lr, args.momentum, args.weight_decay, args.lr_step,
         args.k1, args.k2, args.es_patience, args.log_dir)
