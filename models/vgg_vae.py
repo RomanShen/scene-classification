@@ -19,11 +19,13 @@ class VggVAE(nn.Module):
         return features, x_recon, mu, logvar
 
 
-def create_VggVAE(pretrained_weights=None, num_classes=45):
-    vgg_vae = VggVAE(num_classes)
+def create_VggVAE(pretrained_weights=None, pre_num_classes=45, cur_num_classes=45):
     if pretrained_weights:
+        vgg_vae = VggVAE(pre_num_classes)
         vgg_vae.load_state_dict(torch.load(pretrained_weights))
-        vgg_vae.classifier = Classifier(num_classes)
+        vgg_vae.classifier = Classifier(cur_num_classes)
+    else:
+        vgg_vae = VggVAE(cur_num_classes)
     return vgg_vae
 
 
@@ -35,4 +37,4 @@ if __name__ == '__main__':
     # for i in output:
     #     print(i.shape)
     # print(vgg.state_dict().keys())
-    vgg_vag = create_VggVAE("123")
+    vv = create_VggVAE("123")
