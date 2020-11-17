@@ -4,7 +4,7 @@ from functools import partial
 from datetime import datetime
 
 from vgg_vae_loss import VAELoss
-from models.vgg_vae import VggVAE
+from models.vgg_vae import create_VggVAE
 from datasets.read_images import ImageNetData
 
 from torch.optim.lr_scheduler import ExponentialLR
@@ -37,8 +37,8 @@ def _prepare_batch(batch, device, non_blocking):
             convert_tensor(y, device=device, non_blocking=non_blocking))
 
 
-def run(train_loader, val_loader, epochs, lr, momentum, weight_decay, lr_step, k1, k2, es_patience, log_dir):
-    model = VggVAE()
+def run(train_loader, val_loader, pretrained_weights, num_classes, current_dataset, epochs, lr, momentum, weight_decay, lr_step, k1, k2, es_patience, log_dir):
+    model = create_VggVAE(pretrained_weights=pretrained_weights, num_classes=num_classes)
 
     device = 'cpu'
     if torch.cuda.is_available():
@@ -98,7 +98,7 @@ def run(train_loader, val_loader, epochs, lr, momentum, weight_decay, lr_step, k
                        epoch_bound=False, device=device).attach(trainer, n)
 
     exp_name = datetime.now().strftime("%Y%m%d-%H%M%S")
-    log_path = log_dir + "/vgg_vae/{}".format(exp_name)
+    log_path = log_dir + "/vgg_vae_{}/{}".format(current_dataset, exp_name)
 
     tb_logger = TensorboardLogger(log_dir=log_path)
 
@@ -215,6 +215,12 @@ if __name__ == "__main__":
 
     parser.add_argument('--data_dir', type=str, default="./dataset",
                         help="specify the path of the dataset")
+    parser.add_argument('--pretrained_weights', type=str, default='None',
+                        help='if not specified, loaded imagenet params. if specified, loaded params of given path (classifier not included!!)')
+    parser.add_argument('--num_classes', type=int, default=45,
+                        help='the number of classes of current dataset')
+    parser.add_argument('--current_dataset', type=str, default='UCM',
+                        help='should be one of [UCM, AID, NWPU, PROJECT]')
     parser.add_argument('--batch_size', type=int, default=48)
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--lr', type=float, default=0.01)
@@ -237,5 +243,5 @@ if __name__ == "__main__":
 
     dataloaders, dataset_sizes = ImageNetData(args)
 
-    run(dataloaders['train'], dataloaders['val'], args.epochs, args.lr, args.momentum, args.weight_decay, args.lr_step,
+    run(dataloaders['train'], dataloaders['val'], args.pretrained_weights, args.num_classes, args.current_dataset, args.epochs, args.lr, args.momentum, args.weight_decay, args.lr_step,
         args.k1, args.k2, args.es_patience, args.log_dir)

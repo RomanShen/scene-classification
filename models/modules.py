@@ -4,9 +4,9 @@ from torchvision.models import vgg16_bn
 
 
 class MyVgg16(nn.Module):
-    def __init__(self, pretrained=True):
+    def __init__(self):
         super(MyVgg16, self).__init__()
-        vgg16 = vgg16_bn(pretrained=pretrained)
+        vgg16 = vgg16_bn(pretrained=False)
         self.features = vgg16.features
         # self.avgpool = vgg16.avgpool
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
@@ -21,13 +21,13 @@ class MyVgg16(nn.Module):
 
 
 class Classifier(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes=45):
         super(Classifier, self).__init__()
         self.classifier = nn.Sequential(
             nn.Linear(4096, 512),
             nn.ReLU(inplace=True),
             nn.Dropout(0.4),
-            nn.Linear(512, 45),
+            nn.Linear(512, num_classes),
             nn.LogSoftmax(dim=1)
         )
         self._initialize_weights()
@@ -77,7 +77,7 @@ class VAEDecoder(nn.Module):
         return self.fc21(x), self.fc22(x)
 
     def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5*logvar)
+        std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return eps.mul(std).add_(mu)
 
@@ -95,14 +95,17 @@ class VAEDecoder(nn.Module):
 
 
 def make_decoder_layers():
-    cfg = ['M', 512, 512, 512, 'M', 512, 512, 256, 'M', 256, 256, 128, 'M', 128, 64, 'M', 64, 3]
+    cfg = ['M', 512, 512, 512, 'M', 512, 512, 256,
+           'M', 256, 256, 128, 'M', 128, 64, 'M', 64, 3]
     layers = []
     in_channels = 512
     for v in cfg:
         if v == 'M':
-            layers += [nn.ConvTranspose2d(in_channels, in_channels, kernel_size=2, stride=2)]
+            layers += [nn.ConvTranspose2d(in_channels,
+                                          in_channels, kernel_size=2, stride=2)]
         else:
-            convtran2d = nn.ConvTranspose2d(in_channels, v, kernel_size=3, padding=1)
+            convtran2d = nn.ConvTranspose2d(
+                in_channels, v, kernel_size=3, padding=1)
             layers += [convtran2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
             in_channels = v
     return nn.Sequential(*layers)
@@ -112,5 +115,3 @@ if __name__ == '__main__':
     model = VAEDecoder()
     output = model(torch.rand(4, 512, 7, 7))
     print(output[0].shape)
-
-
